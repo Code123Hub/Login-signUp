@@ -49,6 +49,10 @@ const authorization = async (req, res, next) => {
             if (paramUserId != tokenId) {
                 return res.status(403).send({ status: false, message: "Unauthorised User Access" })
             }
+            // if(paramUserId != tokenId){
+            //     return res.status(403).send({ status: false, message: "Unauthorised User Access" })
+
+            // }
         }
         console.log("final")
         req.userId = paramUserId;

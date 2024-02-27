@@ -75,22 +75,25 @@ const transporter = nodemailer.createTransport({
   });
   
 
-  const sendForgotPasswordEmail = (email, token) => {
+  const sendMailToUser = (email, token, otp)=>{
     const mailOptions = {
-      from: "anmolkadam369@gmail.com", // Your email address
-      to: email,
-      subject: "Password Reset",
-      text: `Click the link to reset your password: http://localhost:3001/resetPassword/${token}`,
+        from:"anmolkadam369@gmail.com",
+        to:email,
+        subject:"Your link Client",
+        text:`this is your OTP : ${otp}-${token}`
     };
-  
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.log("Error sending email:", error);
-      } else {
-        console.log("Email sent:", info.response);
-      }
-    });
-  };
+    console.log(`this is your OTP : ${otp}-${token} `);
+
+    transporter.sendMail(mailOptions, (error, info)=>{
+        if(error) console.log('Error sending email:', error);
+        else {
+            console.log('Email sent:', info.response);
+            const comingInfo= info.response;
+            return comingInfo;
+        }
+    })
+}
+
 
 function generateOTP() {
     const characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -162,4 +165,4 @@ const verifyOTP = async (req, res) => {
 
 
 
-module.exports = { userLogin, userRegister,sendForgotPasswordEmail, emailVerification, verifyOTP, }
+module.exports = { userLogin, userRegister, emailVerification, verifyOTP, }
