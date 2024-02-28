@@ -11,7 +11,7 @@ router.post("/login", userController.userLogin);
 // router.post('/verify', userController.sendForgotPasswordEmail)
 router.post("/verification/:userId", userController.emailVerification);
 router.post("/verification2", userController.emailVerification);
-router.post("/verifyOTP/:userId", userController.verifyOTP);
+router.post("/verifyOTP", userController.verifyOTP);
 // router.post("email/:userId", userController.emailSend);
 router.post("/reset-password", userController.changePassword);
 
