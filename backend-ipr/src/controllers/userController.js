@@ -284,27 +284,47 @@ const emailSend = async(req,res)=>{
     res.status(200).json(responseType);
 }
 
+// const changePassword = async (req, res)=>{
+//     let data = await verificationModel.find({email: req.body.email, otp: req.body.otpCode});
+//     const response = {}
+//     if(data){
+//         let currentTime = new Date().getTime();
+//         let diff = data.expireIn - currentTime;
+//         if(diff < 0 ){
+//             response.message = 'Token Expire';
+//             response.statusText = 'error';
+
+//         }
+//         else{
+//             let user = await userModel.findOne({email : req.body.email});
+//             user.password = req.body.password;
+//             user.save();
+//             response.message('Password Changed Successfully');
+//             response.statusText ='success';
+//         }
+//     }
+// }
 const changePassword = async (req, res)=>{
-    let data = await verificationModel.find({email: req.body.email, otp: req.body.otpCode});
-    const response = {}
-    if(data){
-        let currentTime = new Date().getTime();
-        let diff = data.expireIn - currentTime;
-        if(diff < 0 ){
-            response.message = 'Token Expire';
-            response.statusText = 'error';
+    const { email, newPassword } = req.body;
 
-        }
-        else{
-            let user = await userModel.findOne({email : req.body.email});
-            user.password = req.body.password;
-            user.save();
-            response.message('Password Changed Successfully');
-            response.statusText ='success';
-        }
+    // Find user by email
+    const user = await userModel.findOne({email: email});
+
+    if (!user) {
+        return res.status(404).json({ message: 'User not found' });
     }
-}
 
+    // Generate salt and hash the new password
+    bcrypt.genSalt(10, (err, salt) => {
+        bcrypt.hash(newPassword, salt, (err, hash) => {
+            if (err) throw err;
+            // Update user's password
+            user.password = hash;
+            res.json({ message: 'Password updated successfully', data:user });
+        });
+    });
+    
+};
 
 
 module.exports = { userLogin, userRegister, emailVerification, verifyOTP, changePassword, emailSend}
