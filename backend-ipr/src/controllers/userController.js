@@ -147,7 +147,7 @@ const userLogin = async function(req,res){
           "neha"
         );
     
-        let tokenInfo = { userId: isUserExist._id, token: token };
+        let tokenInfo = { userId: isUserExist._id, token: token, email: email };
     
         res.setHeader('x-api-key', token)
     
