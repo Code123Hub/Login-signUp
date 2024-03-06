@@ -3,6 +3,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const port = process.env.PORT || 3001;
 const route = require("./routes/route");
+
 mongoose.set("strictQuery", true);
 const app = express();
 const cors = require('cors')

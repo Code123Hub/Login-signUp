@@ -1,13 +1,14 @@
 
 
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
 const userModel = require("../models/userModel");
 const jwt = require('jsonwebtoken');
 const verificationModel = require("../models/verificationModel");
 const nodemailer = require('nodemailer');
 const crypto = require("crypto");
-const validation = require("../validations/validation")
-const bcrypt = require('bcrypt')
+const validation = require("../validations/validation");
+const bcrypt = require('bcrypt');
+const admin = require('../models/adminModel');
 
 
 
