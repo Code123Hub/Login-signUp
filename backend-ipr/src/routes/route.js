@@ -11,6 +11,17 @@ const auth = require('../middleware/auth.js')
 
 router.post("/admin/register",  adminController.adminRegister);
 router.post("/admin/login", adminController.adminLogin);
+//contact 
+router.post("/admin/contactUpdate/:adminId",auth.authentication, auth.authorizationForAdmin, adminController.contactUpdate);
+router.get('/admin/contact', adminController.getcontact)
+router.delete("/admin/contact/:adminId/:contactId",auth.authentication, auth.authorizationForAdmin, adminController.deleteContact )
+//speaker
+router.post("/admin/speaker/:adminId",auth.authentication, auth.authorizationForAdmin, adminController.speakerInfo);
+router.get('/admin/speaker', adminController.speaker)
+router.put("admin/speaker/:adminId/:speakerId", auth.authentication, auth.authorizationForAdmin, adminController.speakerUpdate );
+router.delete("admin/speaker/:adminId/:speakerId",auth.authentication, auth.authorizationForAdmin, adminController.speakerDelete);
+
+router.post("/admin/testimonial/:adminId",auth.authentication, auth.authorizationForAdmin, adminController.testimonial)
 
 // meeting schedule route
 
