@@ -1,7 +1,5 @@
 
 
-
-
 const mongoose = require('mongoose');
 
 const speaker = new mongoose.Schema({

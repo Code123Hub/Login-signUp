@@ -1,22 +1,18 @@
 
-
-
 const mongoose = require('mongoose');
 
-const speaker = new mongoose.Schema({
+const testimonial = new mongoose.Schema({
     name:{
         type:String,
         required:true
       },
-      designation:{
+      description:{
         type:String,
         required:true
-    
       },
       location:{
         type:String,
         required:true
-    
       },
       date:{
         type:String,
@@ -27,11 +23,14 @@ const speaker = new mongoose.Schema({
         type:String,
         required:true
       },
-      
+      speakerName:{
+        type:String,
+        required:true
+      },
       isDeleted:{
         type:Boolean,
         default:false
       },
     },{timestamps:true});
 
-module.exports  = mongoose.model('speaker', speaker);
+module.exports  = mongoose.model('testimonial', testimonial);

@@ -414,9 +414,10 @@ const deleteContact = async function (req,res){
 const speaker = async function (req, res){
   try {
     let getSpeakerModel = await speakerModel.find();
-    if(getSpeakerModel.length != 0) return res.status(404).send({ status: false, message: "No contact details found" });
+    if(getSpeakerModel.length == 0) return res.status(404).send({ status: false, message: "No contact details found" });
     return res.status(200).send({"status":true, "message":"speakers Details", "data":getSpeakerModel})
-  } catch (error) {
+  } 
+  catch (error) {
     return res
     .status(500)
     .send({ status: false, message: `error ${error.message}` });

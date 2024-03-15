@@ -2,7 +2,8 @@
 
 const jwt = require('jsonwebtoken')
 const { isValidObjectId } = require('mongoose')
-const userModel = require('../models/userModel')
+const userModel = require('../models/userModel');
+const adminModel = require('../models/adminModel')
 
 const authentication = (req, res, next) => {
     try {
@@ -59,4 +60,34 @@ const authorization = async (req, res, next) => {
 }
 
 
-module.exports = { authentication, authorization }
+const authorizationForAdmin = async (req, res, next) => {
+    try {
+        let tokenId = req.userId;
+        let paramAdminId = req.params.adminId
+        console.log(paramAdminId)
+        console.log(tokenId)
+
+        if (paramAdminId) {
+            if (!isValidObjectId(paramAdminId)) {
+                return res.status(400).send({ status: false, message: "invalid user id" })
+            }
+            let userData = await adminModel.findById(paramAdminId);
+            console.log("userdata ",userData)
+            if (!userData) {
+                return res.status(404).send({ status: false, message: "No user found for this AdminId" })
+            }
+
+            if (paramAdminId != tokenId) {
+                return res.status(403).send({ status: false, message: "Unauthorised User Access" })
+            }
+        }
+        console.log("final")
+        req.userId = paramAdminId;
+        next()
+
+    } catch (error) {
+        return res.status(500).send({ status: false, message: error.message })
+    }
+}
+
+module.exports = { authentication, authorization, authorizationForAdmin }

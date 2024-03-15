@@ -2,8 +2,8 @@
 
 const express = require("express");
 const router = express.Router();
-const userController = require("../controllers/userController");
-const adminController = require("../controllers/AdminController");
+const userController = require("../controllers/userController.js");
+const adminController = require("../controllers/AdminController.js");
 const auth = require('../middleware/auth.js')
 
 
@@ -16,8 +16,9 @@ router.post("/admin/contactUpdate/:adminId",auth.authentication, auth.authorizat
 router.get('/admin/contact', adminController.getcontact)
 router.delete("/admin/contact/:adminId/:contactId",auth.authentication, auth.authorizationForAdmin, adminController.deleteContact )
 //speaker
-router.post("/admin/speaker/:adminId",auth.authentication, auth.authorizationForAdmin, adminController.speakerInfo);
-router.get('/admin/speaker', adminController.speaker)
+// router.post("/admin/speaker/:adminId",auth.authentication, auth.authorizationForAdmin, adminController.speakerInfo);
+router.post("/admin/speaker", adminController.speakerInfo);
+router.get('/admin/speaker', adminController.speaker);
 router.put("admin/speaker/:adminId/:speakerId", auth.authentication, auth.authorizationForAdmin, adminController.speakerUpdate );
 router.delete("admin/speaker/:adminId/:speakerId",auth.authentication, auth.authorizationForAdmin, adminController.speakerDelete);
 
