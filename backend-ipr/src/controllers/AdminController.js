@@ -12,6 +12,16 @@ const validation = require("../validations/validation");
 const speakerModel = require("../models/speakerModel");
 const testimonialModel = require("../models/testimonialModel");
 
+function convertMinutesToTime(minutes) {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  const formattedHours = hours < 10 ? `0${hours}` : hours;
+  const formattedMins = mins < 10 ? `0${mins}` : mins;
+  return `${formattedHours}:${formattedMins}`;
+}
+
+
+
 const adminRegister = async function (req, res) {
   try {
     let userData = req.body;
@@ -172,9 +182,15 @@ const adminLogin = async function (req, res) {
 
 const scheduleEvent = async function (req, res) {
   try {
+    //1 hour default time for event
     let data = req.body;
     console.log(data);
     let { title, time, endTime, date, location } = data;
+
+    if (!title) return res.status(400).send({ status: false, message: " title is mandatory" });
+    if (typeof title!= "string") return res.status(400).send({ status: false, message: " title should be in string" });
+    title = data.title = title.trim();
+    if (title == "") return res.status(400).send({ status: false, message: "Please Enter title value" });
 
     const [hours, minutes] = data.time.split(":").map(Number);
 
@@ -217,23 +233,16 @@ const scheduleEvent = async function (req, res) {
   }
 };
 
-const getUserMeeting = async function (req, res) {
+const getEvent = async function (req, res) {
   try {
-    let userId = req.params.userId;
-    let userData = await userModel.findById(userId);
-    let data = await meetingModel
-      .find({
-        $or: [{ conductedBy: userData.email }, { meetWith: userData.email }],
-        isDeleted: false,
-      })
-      .sort({ date: 1, time: 1 });
-    console.log("data", data);
+    let data = await eventModel.find({ isDeleted: false }).sort({ date: 1, time: 1 });
+    console.log("data", data)
     let newData = [];
     for (let i = 0; i < data.length; i++) {
       const formattedDate = new Date(data[i].date).toLocaleDateString();
       const formattedTime = convertMinutesToTime(data[i].time);
       const formattedEndTime = convertMinutesToTime(data[i].endTime);
-      console.log(formattedDate, formattedTime, formattedEndTime);
+      console.log(formattedDate, formattedTime, formattedEndTime)
       const updatedDate = formattedDate;
       const updatedStartTime = formattedTime;
       const updatedEndTime = formattedEndTime;
@@ -244,25 +253,107 @@ const getUserMeeting = async function (req, res) {
         time: updatedStartTime,
         date: updatedDate,
         endTime: updatedEndTime,
-        meetWith: `${data[i].meetWith}`,
-        conductedBy: `${data[i].conductedBy}`,
+        location: `${data[i].location}`,
         isDeleted: `${data[i].isDeleted}`,
-      };
+      }
       newData.push(newObj);
     }
-    console.log("newData", newData);
+    console.log("newData", newData)
     if (newData.length === 0) {
-      console.log("no data found");
+      console.log("no data found")
       return res.status(404).send({ status: false, message: "No Data found" });
     }
     return res.status(200).send({ status: true, data: newData });
-  } catch (error) {
-    return res
-      .status(500)
-      .send({ status: false, message: `error ${error.message}` });
-  }
-};
 
+  } catch (error) {
+    return res.status(500).send({ status: false, message: `error ${error.message}` })
+  }
+}
+
+//not working right now 
+const editEvent = async function (req, res){
+  let eventId = req.params.eventId;
+    let data = req.body;
+    console.log(data)
+
+    let { title, time, endTime, date, location } = data;
+
+    if (!title) return res.status(400).send({ status: false, message: " title is mandatory" });
+    if (typeof title!= "string") return res.status(400).send({ status: false, message: " title should be in string" });
+    title = data.title = title.trim();
+    if (title == "") return res.status(400).send({ status: false, message: "Please Enter title value" });
+
+    const [hours, minutes] = data.time.split(':').map(Number);
+
+    const timeInMinutes = hours * 60 + minutes;
+    const endTimeInMinutes = hours * 60 + minutes + 60;
+    const dateInMilliseconds = new Date(data.date).getTime();
+
+    time = data.time = timeInMinutes;
+    endTime = data.endTime = endTimeInMinutes;
+    date = data.date = dateInMilliseconds;
+
+    console.log('Time in minutes:', time);
+    console.log('Endtime in minutes:', endTime);
+    console.log('Date in milliseconds:', date);
+    console.log("location for event Schedule:", location);
+
+    let overlappingEvents = await eventModel.find({
+      date: date,
+      location: location,
+      $and: [{ time: { $lt: endTime } }, { endTime: { $gt: time } }],
+      isDeleted: false,
+    });
+
+    console.log("data", data, "overlappingEvents", overlappingEvents);
+
+    if (overlappingEvents.length !== 0) {
+      return res.status(400).send({
+        status: false,
+        message: "Overlapping events detected",
+        data: overlappingEvents,
+      });
+    }
+
+    const updateData = await eventModel.findOneAndUpdate({_id:eventId}, {$set:{date:date, time:time, endTime:endTime}}, {new:true});
+    console.log("updatedData",updateData)
+    
+      const formattedDate = new Date(updateData.date).toLocaleDateString();
+      const formattedTime = convertMinutesToTime(updateData.time);
+      const formattedEndTime = convertMinutesToTime(updateData.endTime);
+      console.log(formattedDate, formattedTime, formattedEndTime)
+      const updatedDate = formattedDate;
+      const updatedStartTime = formattedTime;
+      const updatedEndTime = formattedEndTime;
+
+      console.log(updatedDate,updatedStartTime,updatedEndTime)
+
+      const newObj = {
+        _id:  `${updateData._id}`,
+        title: `${updateData.title}`,
+        location:`${updateData.location}`,
+        time: updatedStartTime,
+        date: updatedDate,
+        endTime: updatedEndTime,
+      }
+    console.log("newObj", newObj)
+      return res.status(200).send({status:true, data:newObj})
+
+  }   
+
+  const deleteEvent = async function (req, res) {
+    try {
+      let eventId = req.params.eventId;
+      let event = await eventModel.findOneAndUpdate({ _id: eventId, isDeleted: false }, { $set: { isDeleted: true } }, { new: true });
+      if (!event) return res.status(404).send({ status: false, message: "No Data found to delete" });
+  
+      return res.status(200).send({ status: true, message: "Meet deleted" });
+  
+    } catch (error) {
+      return res.status(500).send({ status: false, message: `error ${error.message}` })
+  
+    }
+  }
 const contactUpdate = async function(req,res){
   try{
     let data = req.body;
@@ -384,8 +475,9 @@ const testimonial = async function (req,res){
 
 const getcontact = async function (req, res){
   try {
-    let getContactDetails = await contactModel.find();
-    if(getContactDetails.length != 0) return res.status(404).send({ status: false, message: "No contact details found" });
+    let getContactDetails = await contactModel.find({isDeleted:false});
+    console.log("Getcontact", getContactDetails)
+    if(getContactDetails.length == 0) return res.status(404).send({ status: false, message: "No contact details found" });
     return res.status(200).send({"status":true, "message":"contact Details", "data":getContactDetails})
   } catch (error) {
     return res
@@ -396,11 +488,12 @@ const getcontact = async function (req, res){
 
 const deleteContact = async function (req,res){
   try {
+    let contactId = req.params.contactId;
       let checkContact = await contactModel.find();
         if (checkContact[0].isDeleted == true)
             return res.status(400).send({ status: false, message: "Contact already deleted" })
 
-        let deletePro = await productModel.findOneAndUpdate({ _id: contactId, isDeleted: false },
+        let deletePro = await contactModel.findOneAndUpdate({ _id: contactId, isDeleted: false },
             { $set: { isDeleted: true } })
 
         return res.status(200).send({ status: true, message: "success", message: "deleted successfully " })
@@ -413,11 +506,11 @@ const deleteContact = async function (req,res){
 
 const speaker = async function (req, res){
   try {
-    let getSpeakerModel = await speakerModel.find();
+    let getSpeakerModel = await speakerModel.find({isDeleted:false});
+    console.log("getSpeaker",getSpeakerModel)
     if(getSpeakerModel.length == 0) return res.status(404).send({ status: false, message: "No contact details found" });
     return res.status(200).send({"status":true, "message":"speakers Details", "data":getSpeakerModel})
-  } 
-  catch (error) {
+  } catch (error) {
     return res
     .status(500)
     .send({ status: false, message: `error ${error.message}` });
@@ -428,7 +521,7 @@ const speakerUpdate = async function (req, res) {
     try {
         let userData = req.body;
         let speakerId = req.params.speakerId;
-        let { name, designation, location, topic, date, mongoId } = userData;
+        let { name, designation, location, topic, date } = userData;
         if (!speakerId) return res.status(400).send({ status: false, message: "Please provide speakerId" });
 
         if (Object.keys(userData).length == 1) return res.status(400).send({ status: false, message: "No fields to update" });
@@ -458,7 +551,7 @@ const speakerUpdate = async function (req, res) {
             userData.date = date.trim();
         }
 
-        let updatedSpeaker = await speakerModel.findOneAndUpdate({ _id: speakerId },userData,{ new: true });
+        let updatedSpeaker = await speakerModel.findOneAndUpdate({ _id: speakerId , isDeleted:false},userData,{ new: true });
 
         if (!updatedSpeaker) {
             return res.status(404).send({ status: false, message: "Speaker not found" });
@@ -486,4 +579,85 @@ const speakerDelete = async function (req, res) {
     }
 }
 
-module.exports = { adminRegister, adminLogin, scheduleEvent, getUserMeeting ,contactUpdate, speakerInfo, testimonial,getcontact,deleteContact, speaker, speakerUpdate,speakerDelete};
+const gettestimonial = async function (req, res){
+  try {
+    let gettestimonialData = await testimonialModel.find({isDeleted:false});
+    if(gettestimonialData.length == 0) return res.status(404).send({ status: false, message: "No testimonial details found" });
+    return res.status(200).send({"status":true, "message":"testimonials Details", "data":gettestimonialData})
+  } catch (error) {
+    return res
+    .status(500)
+    .send({ status: false, message: `error ${error.message}` });
+  }
+}
+
+const updateTestimonial = async function (req, res) {
+  try {
+      let userData = req.body;
+      let testimonialId = req.params.testimonialId;
+      let { name, description, location, topic, date, speakerName } = userData;
+      if (!testimonialId) return res.status(400).send({ status: false, message: "Please provide testimonialId" });
+
+      if (Object.keys(userData).length == 1) return res.status(400).send({ status: false, message: "No fields to update" });
+
+      if (name) {
+          if (typeof name !== "string") return res.status(400).send({ status: false, message: "name should be a string" });
+          userData.name = name.trim();
+      }
+
+      if (description) {
+          if (typeof description !== "string") return res.status(400).send({ status: false, message: "description should be a string" });
+          userData.description = description.trim();
+      }
+
+      if (location) {
+          if (typeof location !== "string") return res.status(400).send({ status: false, message: "location should be a string" });
+          userData.location = location.trim();
+      }
+
+      if (topic) {
+          if (typeof topic !== "string") return res.status(400).send({ status: false, message: "topic should be a string" });
+          userData.topic = topic.trim();
+      }
+
+      if (date) {
+          if (typeof date !== "string") return res.status(400).send({ status: false, message: "date should be a string" });
+          userData.date = date.trim();
+      }
+      if (speakerName) {
+        if (typeof speakerName !== "string") return res.status(400).send({ status: false, message: "speakerName should be a string" });
+        userData.speakerName = speakerName.trim();
+    }
+      let updateTestimonial = await testimonialModel.findOneAndUpdate({ _id: testimonialId, isDeleted:false },userData,{ new: true });
+
+      if (!updateTestimonial) {
+          return res.status(404).send({ status: false, message: "testimonial not found" });
+      }
+
+      res.status(200).send({ status: true, message: "testimonial Updated", data: updateTestimonial });
+
+  } catch (error) {
+      return res.status(500).send({ status: false, message: `Error: ${error.message}` });
+  }
+}
+const testimonialDelete = async function (req, res) {
+  try {
+    let testimonialId = req.params.testimonialId;
+    if (!testimonialId) return res.status(400).send({ status: false, message: "Please provide testimonialId" });
+      const testimonialDeleted = await testimonialModel.findOneAndUpdate({ _id: testimonialId, isDeleted:false },{$set:{isDeleted:true}});
+      if (!testimonialDeleted) {
+          return res.status(404).send({ status: false, message: "testimonial not found" });
+      }
+      res.status(200).send({ status: true, message: "Speaker deleted successfully", data: testimonialDeleted });
+  } catch (error) {
+      return res.status(500).send({ status: false, message: `Error: ${error.message}` });
+  }
+}
+
+module.exports = { 
+  adminRegister, adminLogin, 
+  scheduleEvent, editEvent,getEvent,deleteEvent,
+  contactUpdate, getcontact,deleteContact,
+  speakerInfo, speaker, speakerUpdate,speakerDelete,
+  testimonial ,gettestimonial,updateTestimonial,testimonialDelete
+};
